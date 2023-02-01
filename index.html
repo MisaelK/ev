@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#222">
+<link rel="shortcut icon" href="img/favicon.png">
+
+<title>Enhanced Viewer</title>
+<!-- Created by Misael.K -->
+
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha256-wLz3iY/cO4e6vKZ4zRmo4+9XDpMcgKOvv/zEU3OMlRo=" crossorigin="anonymous"> -->
+<link href="css/bootstrap-darkly.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --headerAndFooterHeight: 105px;
+}
+.navbar {
+    padding: 0.75rem 0;
+}
+.navbar .navbar-nav .btn,
+.navbar .share-nav .btn {
+    padding: 0.5rem 1rem;
+}
+.share-nav {
+    position: relative;
+}
+.share-nav .toast {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+    cursor: default;
+    line-height: 19px;
+}
+@media (min-width: 992px) {
+    .navbar .nav-item + .nav-item {
+        margin-left: 1rem;
+    }
+}
+@media (max-width: 991px) {
+    .navbar .btn,
+    .dropdown-menu.show {
+        width: 100%;
+    }
+    .dropdown-menu.show {
+        position: absolute;
+        left: 0;
+        top: 0;
+        box-shadow: 0 0 0 200vw rgba(0, 0, 0, 0.5);
+        z-index: 5;
+    }
+    .dropdown-toggle.show {
+        position: relative;
+        z-index: 6;
+    }
+    .share-nav .btn {
+        margin-top: 0.25rem;
+    }
+    .share-nav .toast {
+        height: calc(100% - 4px);
+    }
+    .navbar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        justify-content: space-between;
+        column-gap: 6px;
+        row-gap: 4px;
+        padding: 5px 0;
+    }
+    .nav-item {
+        margin-top: 2px;
+        flex-grow: 1;
+    }
+    .nav-item.dropup,
+    .dropdown-menu.show {
+        min-width: 140px;
+    }
+}
+
+main {
+    padding-bottom: 66px;
+    overflow-x: hidden;
+}
+
+#item-container {
+    width: 100%;
+    height: calc(100vh - var(--headerAndFooterHeight));
+    overflow: hidden;
+    position: relative;
+    background: #222;
+}
+#drag-container {
+    /* border: 1px solid #00f; */
+    width: 100%;
+    height: 100%;
+}
+#position-container {
+    /* border: 1px solid #0ff; */
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+#fx-container-2 {
+    /* border: 1px solid #0f0; */
+    display: inline-block;
+    position: relative;
+}
+#fx-container-1 {
+    /* border: 1px solid #f00; */
+    position: relative;
+}
+
+#viewpage {
+    width: calc(100vw - 16px);
+    height: calc(100vh - var(--headerAndFooterHeight));
+    display: block;
+}
+#viewimage {
+    /* border: 2px solid #ff0; */
+    object-fit: none;
+    display: none;
+}
+#viewimage-reference {
+    display: none;
+}
+
+#fx-container-1:before,
+#fx-container-1:after {
+    position: absolute;
+    left: 0; top: 0;
+    margin: auto;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.dark #fx-container-1:before {
+    content: "";
+    background: rgba(0, 0, 0, 0.02);
+}
+.dark #fx-container-1:after {
+    content: "";
+    background: rgba(0, 0, 0, 0.3);
+    mix-blend-mode: overlay;
+}
+.darker #fx-container-1:before {
+    content: "";
+    background: rgba(0, 0, 0, 0.05);
+}
+.darker #fx-container-1:after {
+    content: "";
+    background: rgba(0, 0, 0, 0.7);
+    mix-blend-mode: overlay;
+}
+.bright #fx-container-1:before {
+    content: "";
+    background: rgba(255, 255, 255, 0.5);
+    mix-blend-mode: soft-light;
+}
+.brighter #fx-container-1:before {
+    content: "";
+    background: rgba(255, 255, 255, 1);
+    mix-blend-mode: soft-light;
+}
+.brighter #fx-container-1:after {
+    content: "";
+    background: rgba(255, 255, 255, 0.5);
+    mix-blend-mode: soft-light;
+}
+.grayscale #fx-container-1 {
+    filter: saturate(0%);
+}
+.extra-saturated #fx-container-1 {
+    filter: saturate(200%);
+}
+.low-contrast #fx-container-1 {
+    filter: contrast(50%);
+}
+.high-contrast #fx-container-1 {
+    filter: contrast(200%);
+}
+.grayscale.low-contrast #fx-container-1 {
+    filter: saturate(0%) contrast(50%);
+}
+.grayscale.high-contrast #fx-container-1 {
+    filter: saturate(0%) contrast(200%);
+}
+.extra-saturated.low-contrast #fx-container-1 {
+    filter: saturate(200%) contrast(50%);
+}
+.extra-saturated.high-contrast #fx-container-1 {
+    filter: saturate(200%) contrast(200%);
+}
+
+.invert #fx-container-2 {
+    filter: invert(100%);
+}
+
+.rotate-90 #fx-container-2 {
+    transform: rotate(90deg);
+}
+.rotate-90.make-fit #fx-container-2 {
+    transform: rotate(90deg) scale(var(--inverseAspectRatio, 1));
+}
+.rotate-180 #fx-container-2 {
+    transform: rotate(180deg);
+}
+.rotate-270 #fx-container-2 {
+    transform: rotate(270deg);
+}
+.rotate-270.make-fit #fx-container-2 {
+    transform: rotate(270deg) scale(var(--inverseAspectRatio, 1));
+}
+.flip-h #fx-container-2 {
+    transform: scaleX(-1); 
+}
+.flip-v #fx-container-2 {
+    transform: scaleY(-1); 
+}
+
+.zoom-10 #fx-container-1 {
+    transform: scale(0.10);
+}
+.zoom-25 #fx-container-1 {
+    transform: scale(0.25);
+}
+.zoom-50 #fx-container-1 {
+    transform: scale(0.50);
+}
+.zoom-75 #fx-container-1 {
+    transform: scale(0.75);
+}
+.zoom-150 #fx-container-1 {
+    transform: scale(1.5);
+}
+.zoom-200 #fx-container-1 {
+    transform: scale(2);
+}
+.zoom-300 #fx-container-1 {
+    transform: scale(3);
+}
+.zoom-500 #fx-container-1 {
+    transform: scale(5);
+}
+.zoom-fit #viewimage {
+    object-fit: contain;
+    width: 100%;
+    height: calc(100vh - var(--headerAndFooterHeight));
+}
+.draggable #fx-container-1 {
+    pointer-events: none;
+}
+.draggable #drag-container {
+    will-change: transform;
+}
+</style>
+
+</head>
+<body class="d-flex flex-column h-100">
+
+<!-- Begin page content -->
+<main class="flex-shrink-0">
+    <h1 class="mt-1 mb-0">Enhanced Viewer</h1>
+    <div class="form-group">
+        <label class="col-form-label mt-2" for="url">Enter a Youtube video or any other URL:</label>
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="URL" id="url" autocomplete="off" aria-label="URL" aria-describedby="enter-url">
+            <button class="btn btn-primary enter-url" type="button" id="enter-url">Load</button>
+        </div>
+    </div>
+    <div id="item-container" class="">
+        <div id="drag-container">
+            <div id="position-container">
+                <div id="fx-container-2">
+                    <div id="fx-container-1">
+                        <iframe id="viewpage" referrerpolicy="no-referrer" src="data:text/html;base64,PCFkb2N0eXBlIGh0bWw+PGh0bWw+PGJvZHkgc3R5bGU9J2JhY2tncm91bmQ6IzIyMic+PC9ib2R5PjwvaHRtbD4="></iframe>
+                        <img id="viewimage" referrerpolicy="no-referrer" src="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <img referrerpolicy="no-referrer" id="viewimage-reference" src="">
+
+    <nav class="navbar fixed-bottom navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#buttons-navbar" aria-controls="buttons-navbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="buttons-navbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropup">
+                        <button class="btn btn-secondary nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Brightness</button>
+                        <ul class="dropdown-menu">
+                            <li><button data-param="b1" class="dropdown-item make-dark">Dark</button></li>
+                            <li><button data-param="b2" class="dropdown-item make-darker">Darker</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="b3" class="dropdown-item make-bright">Bright</button></li>
+                            <li><button data-param="b4" class="dropdown-item make-brighter">Brighter</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropup">
+                        <button class="btn btn-secondary nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Contrast</button>
+                        <ul class="dropdown-menu">
+                            <li><button data-param="c1" class="dropdown-item make-low-contrast">Low Contrast</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="c2" class="dropdown-item make-high-contrast">High Contrast</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropup">
+                        <button class="btn btn-secondary nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Saturation</button>
+                        <ul class="dropdown-menu">
+                            <li><button data-param="s1" class="dropdown-item make-grayscale">Grayscale</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="s2" class="dropdown-item make-extra-saturated">Extra Saturated</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <button data-param="i" class="btn btn-secondary nav-link make-invert">Invert</button>
+                    </li>
+                    <li class="nav-item dropup">
+                        <button class="btn btn-secondary nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Rotate/Flip</button>
+                        <ul class="dropdown-menu">
+                            <li><button data-param="rf1" class="dropdown-item make-rotate-90">Rotate 90° CW</button></li>
+                            <li><button data-param="rf2" class="dropdown-item make-rotate-180">Rotate 180°</button></li>
+                            <li><button data-param="rf3" class="dropdown-item make-rotate-270">Rotate 270° CW</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="rf4" class="dropdown-item make-flip-h">Flip horizontally</button></li>
+                            <li><button data-param="rf5" class="dropdown-item make-flip-v">Flip vertically</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropup">
+                        <button class="btn btn-secondary nav-link dropdown-toggle zoom-toggle" data-bs-toggle="dropdown" aria-expanded="false">Zoom</button>
+                        <ul class="dropdown-menu">
+                            <li><button data-param="z1" class="dropdown-item make-zoom-10">Zoom 10%</button></li>
+                            <li><button data-param="z2" class="dropdown-item make-zoom-25">Zoom 25%</button></li>
+                            <li><button data-param="z3" class="dropdown-item make-zoom-50">Zoom 50%</button></li>
+                            <li><button data-param="z4" class="dropdown-item make-zoom-75">Zoom 75%</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="z5" class="dropdown-item make-zoom-100">Zoom 100%</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="z6" class="dropdown-item make-zoom-150">Zoom 150%</button></li>
+                            <li><button data-param="z7" class="dropdown-item make-zoom-200">Zoom 200%</button></li>
+                            <li><button data-param="z8" class="dropdown-item make-zoom-300">Zoom 300%</button></li>
+                            <li><button data-param="z9" class="dropdown-item make-zoom-500">Zoom 500%</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button data-param="z10" class="dropdown-item make-zoom-fit">Zoom Fit</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <button data-param="d" class="btn btn-secondary nav-link make-draggable">Draggable</button>
+                    </li>
+                </ul>
+                <div class="share-nav">
+                    <button class="btn btn-outline-light button-share">Share</button>
+                    <div id="toast-copied" class="toast align-items-center text-bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-body d-flex justify-content-center">Copied!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-lSABj6XYH05NydBq+1dvkMu6uiCc/MbLYOFGRkf3iQs=" crossorigin="anonymous"></script>
+<script>
+'use strict';
+const INITIAL_VIEWPAGE_VALUE = "data:text/html;base64,PCFkb2N0eXBlIGh0bWw+PGh0bWw+PGJvZHkgc3R5bGU9J2JhY2tncm91bmQ6IzIyMic+PC9ib2R5PjwvaHRtbD4=";
+const IMAGE_DETECTORS = [".jpg", "gif", ".jpeg", ".png", ".webp", ".avif", ".bmp", "twimg.com"];
+
+$(function() {
+
+    // force initial value of "<!doctype html><html><body style='background:#222'></body></html>"
+    $("#viewpage").attr("src", INITIAL_VIEWPAGE_VALUE);
+
+    // submit on enter
+    let resetValues = function() {
+        // always call this function separately from processURL, or there can be 
+        // a race condition when setting the iframe's src
+        
+        // reset everything to their initial values
+        $("#item-container")[0].className = "draggable zoom-fit";
+        $("#drag-container").css("transform", "");
+        $("#viewpage").attr("src", INITIAL_VIEWPAGE_VALUE);
+        $("#viewimage").attr("src", "");
+        $("#viewimage-reference").attr("src", "");
+        $(".navbar-nav .btn-primary").addClass("btn-secondary").removeClass("btn-primary");
+        $(".navbar-nav .dropdown-item.active").removeClass("active");
+        translateX = 0; translateY = 0; oldX = 0; oldY = 0;
+    };
+    let processURL = function() {
+    
+        // read URL as parse it, if it fails, load it in an iframe directly
+        let val = $("#url").val();
+        if (val.length > 0 && val.indexOf("https://") === -1) {
+            val = "https://" + val;
+        }
+        let url;
+        try {
+            url = new URL(val);
+        } catch(e) {
+            console.error(e);
+            $("#viewpage").attr("src", val);
+            return;
+        }
+        
+        // determine if it's a single image
+        let fullURL = url.toString();
+        let processAsImage = false;
+        // it's an image if it's a direct link to an image, 
+        // or hosted on Twitter's image CDN
+        for (let fragment of IMAGE_DETECTORS) {
+            if (fullURL.indexOf(fragment) > 0) {
+                processAsImage = true;
+                break;
+            }
+        }
+        
+        // apply defaults
+        let isManualLoad = $("#url").attr("data-manual-load");
+        let loadDefaultParams = true;
+        let pageURL = new URL(location);
+        if (pageURL) {
+            let params = pageURL.searchParams.get("params");
+            if (params !== null) {
+                loadDefaultParams = false;
+            }
+        }
+        if (isManualLoad || loadDefaultParams) {
+            $(".zoom-toggle").removeClass("btn-secondary").addClass("btn-primary");
+            $(".make-zoom-fit").addClass("active");
+            if (processAsImage) {
+                // defaults for images
+                $(".make-draggable").removeClass("btn-secondary").addClass("btn-primary");
+                $("#item-container").addClass("draggable");
+            } else {
+                // defaults for videos and pages
+                $(".make-draggable").addClass("btn-secondary").removeClass("btn-primary");
+                $("#item-container").removeClass("draggable");
+            }
+        }
+        $("#url").removeAttr("data-manual-load");
+        
+        // process as image or as webpage
+        if (processAsImage) {
+            $("#viewpage").hide();
+            $("#viewimage").show().attr("src", val);
+            $("#viewimage-reference").attr("src", val);
+        } else {
+            $("#viewpage").show();
+            $("#viewimage").hide();
+            // try to extract YouTube's video id to show as embed (as headers 
+            // make it impossible to put YouTube in an iframe)
+            let videoID;
+            url.hostname = url.hostname.replace("www.", "");
+            if (url.hostname === "youtube.com" || url.hostname === "youtu.be") {
+                // watch?v=video_id
+                if (url.pathname === "/watch") {
+                    videoID = url.searchParams.get("v"); 
+                }
+                // "embed/video_id", "shorts/video_id"
+                if (url.pathname === "/embed" || url.pathname === "/shorts") {
+                    videoID = url.pathname.split("/").slice(2);
+                }
+                // /youtu.be/video_id
+                if (url.hostname === "youtu.be") {
+                    videoID = url.pathname.slice(1);
+                }
+                // load as embed (YouTube's official sharing method), or load
+                // it normally as a webpage if no Video ID was found
+                if (videoID) {
+                    let newURL = "https://youtube.com/embed/" + videoID;
+                    $("#viewpage").attr("src", newURL);
+                } else {
+                    $("#viewpage").attr("src", val);
+                }
+            } else {
+                // if the URL is not from YouTube, load the entire URL
+                $("#viewpage").attr("src", val);
+            }
+        }
+
+        calculateInverseAspectRatio();
+        
+        // scroll to the bottom
+        window.scrollTo(0, window.innerHeight);
+    };
+    $("#url").on("keydown", function(e) {
+        if (e.keyCode === 13) {
+            $("#url").attr("data-manual-load", true);
+            resetValues();
+            setTimeout(processURL, 100);
+        }
+    });
+    $("#enter-url").on("click", function() {
+        $("#url").attr("data-manual-load", true);
+        resetValues();
+        setTimeout(processURL, 100);
+    });
+    $("#url").on("focus", function() {
+        $(this).select();
+    });
+
+    // add classes to item-container on button click
+    $(".navbar-nav .btn").on("click", function() {
+        // handle the dropdown separately
+        if ($(this).hasClass("dropdown-toggle")) return;
+        
+        $(this).toggleClass("btn-secondary btn-primary");
+
+        // toggle class on item-container
+        for (let cl of this.classList) {
+            let classNames = cl.split("make-");
+            if (classNames[1]) {
+                $("#item-container").toggleClass(classNames[1]);
+            }
+        }
+    });
+    $(".navbar-nav .dropdown-item").on("click", function() {
+    
+        let $navItem = $(this).parents(".nav-item");
+        let $dropdownToggle = $navItem.find(".dropdown-toggle");
+        let $dropdownItems = $navItem.find(".dropdown-item");
+    
+        // remove all current classes
+        $dropdownItems.each(function() {
+            for (let cl of this.classList) {
+                let classNames = cl.split("make-");
+                if (classNames[1]) {
+                    $("#item-container").removeClass(classNames[1]);
+                }
+            }
+        });
+        
+        // when clicking on an active button, toggle classes manually
+        if ($(this).hasClass("active")) {
+            $dropdownToggle.addClass("btn-secondary").removeClass("btn-primary");
+            // set all as inactive
+            $dropdownItems.removeClass("active");
+        } else {
+            $dropdownToggle.removeClass("btn-secondary").addClass("btn-primary");
+
+            // special case for zoom: when removing zoom, reset the drag position
+            if ($dropdownToggle.hasClass("zoom-toggle")) {
+                let active = $navItem.find(".active")[0];
+                let oldZoom = 100;
+                if (active) {
+                    oldZoom = active.className;
+                    oldZoom = oldZoom.replace("dropdown-item make-zoom-", "");
+                    oldZoom = oldZoom.replace(" active", "") - 0;
+                }
+                let newZoom = this.className;
+                newZoom = newZoom.replace("dropdown-item make-zoom-", "") - 0;
+                if (oldZoom !== NaN) {
+                    let dragContainer = document.querySelector("#drag-container");
+                    translateX = (translateX / oldZoom * newZoom) | 0;
+                    translateY = (translateY / oldZoom * newZoom) | 0;
+                    let newTransform = "" +
+                        "translateX(" + translateX + "px) " +
+                        "translateY(" + translateY + "px) ";
+                    dragContainer.style.transform = newTransform;
+                    oldX = 0; oldY = 0;
+                }
+            }
+
+            // set only current as active
+            $dropdownItems.removeClass("active");
+            $(this).toggleClass("active");
+            
+            // toggle class on item-container
+            for (let cl of this.classList) {
+                let classNames = cl.split("make-");
+                if (classNames[1]) {
+                    $("#item-container").toggleClass(classNames[1]);
+                }
+            }
+        }
+        
+    });
+    
+    // share button copies URL into clipboard
+    $(".button-share").on("click", function() {
+        let url = new URL(window.location);
+        url.searchParams.delete("url");
+        url.searchParams.delete("params");
+        
+        // add main URL to the share URL
+        let paramURL = document.querySelector("#url").value;
+        if (paramURL) {
+            url.searchParams.set("url", paramURL);
+        }
+
+        // add params to the share URL
+        let params = document.querySelectorAll("[data-param]");
+        let paramList = [];
+        for (let param of params) {
+            if ($(param).hasClass("btn-primary") || $(param).hasClass("active")) {
+                paramList.push(param.getAttribute("data-param"));
+            }
+        }
+        url.searchParams.set("params", paramList.join("-"));
+
+        // place URL in clipboard
+        navigator.clipboard.writeText(url.toString())
+        .then(() => {
+            const toastElem = document.querySelector("#toast-copied");
+            const toast = new bootstrap.Toast(toastElem);
+            toast.show();
+        })
+        .catch(err => {
+            console.error(err);
+        });    
+    });
+
+    // calculate aspect ratio on resize
+    calculateInverseAspectRatio();
+    window.addEventListener("resize", function() {
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(calculateInverseAspectRatio, 33);
+    });
+    document.querySelector("#viewimage-reference").addEventListener("load", calculateInverseAspectRatio);
+
+    // image handlers
+    let oldX = 0;
+    let oldY = 0;
+    let translateX = 0;
+    let translateY = 0;
+    let dragContainer = document.querySelector("#drag-container");
+    let itemContainer = document.querySelector("#item-container");
+    let drag = function(e) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // exit if not set as draggable
+        if (!($(itemContainer).hasClass("draggable"))) return;
+
+        // use values for desktop or mobile
+        let newX = e.clientX;
+        let newY = e.clientY;
+        let buttons = e.buttons;
+        if (!newX && !newY && e.changedTouches.length === 1) {
+            newX = e.changedTouches[0].clientX;
+            newY = e.changedTouches[0].clientY;
+            buttons = 1;
+        }
+        
+        if (oldX === 0) {
+            oldX = newX;
+        }
+        if (oldY === 0) {
+            oldY = newY;
+        }
+
+        if (buttons === 1) {
+            translateX += newX - oldX;
+            translateY += newY - oldY;
+            let newTransform = "" +
+                "translateX(" + translateX + "px) " +
+                "translateY(" + translateY + "px) ";
+            dragContainer.style.transform = newTransform;
+        }
+
+        oldX = newX;
+        oldY = newY;
+
+    };
+    itemContainer.addEventListener("mousemove", drag);
+    itemContainer.addEventListener("touchmove", drag);
+    itemContainer.addEventListener("touchend", function() {
+        oldX = 0;
+        oldY = 0;
+    });
+    
+    // prevents Firefox from generating the draggable thumbnail
+    itemContainer.addEventListener("mousedown", function(e) {
+        e.preventDefault();
+    });
+    
+    // process url params, if any
+    let loadDefaultParams = true;
+    let processAsImage = false;
+    let pageURL = new URL(location);
+    if (pageURL) {
+        let paramURL = pageURL.searchParams.get("url");
+        if (paramURL) {
+            // determine if it's a single image
+            // it's an image if it's a direct link to an image, 
+            // or hosted on Twitter's image CDN
+            for (let fragment of IMAGE_DETECTORS) {
+                if (paramURL.indexOf(fragment) > 0) {
+                    processAsImage = true;
+                    break;
+                }
+            }
+
+            $("#url").val(paramURL);
+            processURL();
+        }
+        let params = pageURL.searchParams.get("params");
+        if (params !== null) {
+            loadDefaultParams = false;
+            params = params.split("-");
+            for (let param of params) {
+                let $paramElem = $("[data-param='" + param + "']");
+                $paramElem.trigger("click");
+            }
+        }
+    }
+    if (loadDefaultParams) {
+        $(".zoom-toggle").removeClass("btn-secondary").addClass("btn-primary");
+        $(".make-zoom-fit").addClass("active");
+        if (processAsImage) {
+            // defaults for images
+            $(".make-draggable").removeClass("btn-secondary").addClass("btn-primary");
+            $("#item-container").addClass("draggable");
+        } else {
+            // defaults for videos and pages
+            $(".make-draggable").addClass("btn-secondary").removeClass("btn-primary");
+            $("#item-container").removeClass("draggable");
+        }
+    }
+});
+
+function calculateInverseAspectRatio() {
+    // calculate the inverse aspect ratio (height / width), subtracting the
+    // UI elements, calculated manually
+    let bodyRect = document.querySelector("body").getBoundingClientRect();
+    let root = document.querySelector(":root");
+    let headerAndFooterHeight = parseInt(getComputedStyle(root).getPropertyValue("--headerAndFooterHeight"), 10);
+    let processImage = !(document.querySelector("#viewimage-reference").getAttribute("src") === "");
+    let imgWidth = document.querySelector("#viewimage-reference").width || 1;
+    let imgHeight = document.querySelector("#viewimage-reference").height || 1;
+    let bodyWidth = bodyRect.width;
+    let bodyHeight = bodyRect.height - headerAndFooterHeight;
+
+	let inverseAspectRatio;
+    if (processImage) {
+        // fit to body while image is rotated
+        if (imgHeight > imgWidth) {
+            // tall image
+            if (bodyWidth / bodyHeight > imgHeight / imgWidth) {
+                // image also fits horizontally
+                inverseAspectRatio = imgHeight / imgWidth;
+            } else {
+                // limit to body size
+                inverseAspectRatio = bodyWidth / bodyHeight;
+            }
+        } else { 
+            // wide image
+            if (bodyHeight / bodyWidth > imgWidth / imgHeight) {
+                // image also fits vertically
+                inverseAspectRatio = imgWidth / imgHeight;
+            } else {
+                // limit to body size
+                inverseAspectRatio = bodyHeight / bodyWidth;
+            }
+        }
+    } else {
+        inverseAspectRatio = bodyHeight / bodyWidth;
+    }
+    
+	// set the custom property to the root of the document
+	root.style.setProperty("--inverseAspectRatio", inverseAspectRatio);
+}
+</script>
+</body>
+</html>
